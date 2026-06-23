@@ -1,7 +1,8 @@
 import sqlite3
+import pandas as pd
 connection=sqlite3.connect("trades.db")
 cursor=connection.cursor()
-cursor.execute("""CREATE TABLE trades(
+cursor.execute(""" CREATE TABLE IF NOT EXISTS trades(
                id INTEGER PRIMARY KEY,
                symbol TEXT,
                side TEXT,
@@ -13,4 +14,11 @@ cursor.execute("""CREATE TABLE trades(
                """)
 connection.commit()
 print("Trades table created sucessfully")
+df = pd.read_sql_query(
+    "SELECT * FROM trades",
+    connection
+)
+print(df)
+print("\nTotal PnL:")
+print(df["pnl"].sum())
 connection.close()

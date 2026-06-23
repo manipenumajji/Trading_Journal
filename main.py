@@ -1,5 +1,6 @@
 import sqlite3
 import matplotlib.pyplot as plt
+import pandas as pd
 #initilizing database function
 def initialize_database():
 
@@ -413,7 +414,66 @@ def plot_pnl_histogram():
 
     plt.grid(True)
 
-    plt.show()      
+    plt.show()
+def pandas_analysis():
+
+    connection = sqlite3.connect("trades.db")
+
+    df = pd.read_sql_query(
+        "SELECT * FROM trades",
+        connection
+    )
+
+    connection.close()
+
+    if df.empty:
+        print("No trades found!")
+        return
+
+    total_pnl = round(df["pnl"].sum(), 2)
+
+    average_pnl = round(df["pnl"].mean(), 2)
+
+    best_trade = round(df["pnl"].max(), 2)
+
+    worst_trade = round(df["pnl"].min(), 2)
+
+    winning_trades = len(df[df["pnl"] > 0])
+
+    losing_trades = len(df[df["pnl"] < 0])
+
+    print(f"""
+Pandas Analysis
+---------------
+Total Trades   : {len(df)}
+Winning Trades : {winning_trades}
+Losing Trades  : {losing_trades}
+Total PnL      : {total_pnl}
+Average PnL    : {average_pnl}
+Best Trade     : {best_trade}
+Worst Trade    : {worst_trade}
+""")
+def export_to_csv():
+
+    connection = sqlite3.connect("trades.db")
+
+    df = pd.read_sql_query(
+        "SELECT * FROM trades",
+        connection
+    )
+
+    connection.close()
+
+    if df.empty:
+        print("No trades found!")
+        return
+
+    df.to_csv(
+        "trade_report.csv",
+        index=False
+    )
+
+    print("CSV Exported Successfully!")              
 while True:
     print("\n Trading journal\n"
     "1.add trade\n"
@@ -424,7 +484,9 @@ while True:
     "6.equity curve\n" \
     "7.win/loss chart\n" \
     "8.pnl histogram\n" \
-    "9.exit")
+    "9.pandas analysis\n"
+    "10.export csv\n"
+    "11.exit")
     try:
         choice=int(input("enter your choice: "))
     except ValueError:
@@ -447,8 +509,12 @@ while True:
     elif choice == 7:
         plot_win_loss_chart()
     elif choice == 8:
-        plot_pnl_histogram()           
+        plot_pnl_histogram() 
     elif choice == 9:
+        pandas_analysis()
+    elif choice == 10:
+        export_to_csv()              
+    elif choice == 11:
         print("Good Luck Comeback Stronger!")
         break
         
