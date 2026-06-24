@@ -8,6 +8,7 @@ def initialize_database():
 
     cursor = connection.cursor()
 
+    # Manual Journal Trades
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS trades(
         id INTEGER PRIMARY KEY,
@@ -19,7 +20,6 @@ def initialize_database():
         pnl REAL
     )
     """)
-
     connection.commit()
 
     connection.close()
@@ -473,7 +473,8 @@ def export_to_csv():
         index=False
     )
 
-    print("CSV Exported Successfully!")              
+    print("CSV Exported Successfully!")      
+               
 while True:
     print("\n Trading journal\n"
     "1.add trade\n"
@@ -513,7 +514,7 @@ while True:
     elif choice == 9:
         pandas_analysis()
     elif choice == 10:
-        export_to_csv()              
+        export_to_csv()                 
     elif choice == 11:
         print("Good Luck Comeback Stronger!")
         break
