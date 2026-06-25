@@ -55,51 +55,82 @@
 </div>
 
 <!-- ── Recent Trades ── -->
+<!-- ── Recent Trades ── -->
 <div class="table-card">
+
     <div class="table-card-header">
         <h2>Recent Trades</h2>
         <a href="/trades">View all →</a>
     </div>
-    <table>
-        <thead>
-            <tr>
-                <th>Symbol</th>
-                <th>Side</th>
-                <th>Entry</th>
-                <th>Exit</th>
-                <th>PnL</th>
-                <th>Strategy</th>
-                <th>Date</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for trade in trades[:10] %}
-            <tr>
-                <td class="td-symbol">{{ trade.symbol | upper }}</td>
-                <td>
-                    <span class="badge {% if trade.side == 'Long' %}badge-long{% else %}badge-short{% endif %}">
-                        {{ trade.side }}
-                    </span>
-                </td>
-                <td class="muted" style="font-family: var(--font-mono);">{{ trade.entry_price }}</td>
-                <td class="muted" style="font-family: var(--font-mono);">{{ trade.exit_price }}</td>
-                <td class="td-pnl {% if trade.pnl >= 0 %}profit{% else %}loss{% endif %}">
-                    {% if trade.pnl >= 0 %}+{% endif %}₹{{ trade.pnl }}
-                </td>
-                <td class="muted">{{ trade.strategy or '—' }}</td>
-                <td class="muted" style="font-size: 12px;">{{ trade.date }}</td>
-                <td>
-                    <a href="/trade/{{ trade.id }}" class="btn-view">View</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+
+    <div class="table-responsive">
+
+        <table>
+
+            <thead>
+                <tr>
+                    <th>Symbol</th>
+                    <th>Side</th>
+                    <th>Entry</th>
+                    <th>Exit</th>
+                    <th>PnL</th>
+                    <th>Strategy</th>
+                    <th>Date</th>
+                    <th></th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for trade in trades[:10] %}
+
+                <tr>
+
+                    <td class="td-symbol">{{ trade.symbol | upper }}</td>
+
+                    <td>
+                        <span class="badge {% if trade.side == 'Long' %}badge-long{% else %}badge-short{% endif %}">
+                            {{ trade.side }}
+                        </span>
+                    </td>
+
+                    <td class="muted" style="font-family: var(--font-mono);">
+                        {{ trade.entry_price }}
+                    </td>
+
+                    <td class="muted" style="font-family: var(--font-mono);">
+                        {{ trade.exit_price }}
+                    </td>
+
+                    <td class="td-pnl {% if trade.pnl >= 0 %}profit{% else %}loss{% endif %}">
+                        {% if trade.pnl >= 0 %}+{% endif %}₹{{ trade.pnl }}
+                    </td>
+
+                    <td class="muted">
+                        {{ trade.strategy or '—' }}
+                    </td>
+
+                    <td class="muted" style="font-size:12px;">
+                        {{ trade.date }}
+                    </td>
+
+                    <td>
+                        <a href="/trade/{{ trade.id }}" class="btn-view">
+                            View
+                        </a>
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
 </div>
-
-{% else %}
-
 <!-- ── Empty State ── -->
 <div class="table-card">
     <div class="empty-state">

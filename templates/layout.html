@@ -4,17 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EdgeJournal – Pro Trading Journal</title>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
+
 <body>
+
+<!-- Mobile Menu Button -->
+<button class="mobile-menu-btn" onclick="toggleSidebar()">
+    ☰
+</button>
+
+<!-- Dark Overlay -->
+<div class="sidebar-overlay" onclick="closeSidebar()"></div>
 
 <div class="app">
 
-    <!-- ── Sidebar ── -->
-    <aside class="sidebar">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
 
         <div class="sidebar-logo">
             <div class="logo-icon-wrap">📈</div>
@@ -29,46 +41,80 @@
             <span class="nav-section-label">Overview</span>
 
             <a href="/" class="nav-link {% if request.path == '/' %}active{% endif %}">
-                <span class="nav-icon">⊞</span> Dashboard
+                <span class="nav-icon">⊞</span>
+                Dashboard
             </a>
 
             <a href="/trades" class="nav-link {% if request.path == '/trades' %}active{% endif %}">
-                <span class="nav-icon">⇄</span> Trades
+                <span class="nav-icon">⇄</span>
+                Trades
             </a>
 
             <a href="/analytics" class="nav-link {% if request.path == '/analytics' %}active{% endif %}">
-                <span class="nav-icon">↗</span> Analytics
+                <span class="nav-icon">↗</span>
+                Analytics
             </a>
 
-            <span class="nav-section-label" style="margin-top:0.5rem;">Actions</span>
+            <span class="nav-section-label" style="margin-top:8px;">
+                Actions
+            </span>
 
             <a href="/add_trade" class="nav-link {% if request.path == '/add_trade' %}active{% endif %}">
-                <span class="nav-icon">＋</span> Add Trade
+                <span class="nav-icon">＋</span>
+                Add Trade
             </a>
-            
+
             <a href="/settings" class="nav-link {% if request.path == '/settings' %}active{% endif %}">
-                <span class="nav-icon">⚙</span> Settings
+                <span class="nav-icon">⚙</span>
+                Settings
             </a>
 
         </nav>
 
         <div class="sidebar-footer">
-            <div class="user-avatar">M</div>
+
+            <div class="user-avatar">
+                M
+            </div>
+
             <div>
                 <div class="user-name">Mani</div>
                 <div class="user-role">Trader</div>
             </div>
-            <div class="status-dot" title="Active session"></div>
+
+            <div class="status-dot"></div>
+
         </div>
 
     </aside>
 
-    <!-- ── Main ── -->
+    <!-- Main Content -->
     <main class="main-content">
-        {% block content %}{% endblock %}
+
+        {% block content %}
+        {% endblock %}
+
     </main>
 
 </div>
+
+<script>
+
+function toggleSidebar() {
+
+    document.getElementById("sidebar").classList.toggle("show");
+    document.querySelector(".sidebar-overlay").classList.toggle("show");
+
+}
+
+function closeSidebar() {
+
+    document.getElementById("sidebar").classList.remove("show");
+    document.querySelector(".sidebar-overlay").classList.remove("show");
+
+}
+
+</script>
 
 </body>
 </html>
