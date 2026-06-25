@@ -8,7 +8,7 @@ The application supports both manual trade logging and automatic synchronization
 
 ## 🚀 Live Demo
 
-https://YOUR-RENDER-URL.onrender.com
+https://trading-journal-zjp7.onrender.com/
 
 ---
 
