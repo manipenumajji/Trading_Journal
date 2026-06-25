@@ -181,7 +181,7 @@ python app.py
 
 ## Dashboard
 
-(Add screenshot here)
+
 
 ---
 
@@ -192,8 +192,8 @@ python app.py
 ---
 
 ## Analytics
+<img width="1920" height="1080" alt="Screenshot 2026-06-25 105959" src="https://github.com/user-attachments/assets/b879da0e-e510-490f-b7b0-1bc857c08a84" />
 
-(Add screenshot here)
 
 ---
 
