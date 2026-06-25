@@ -181,25 +181,30 @@ python app.py
 
 ## Dashboard
 
+<img width="1920" height="1080" alt="Screenshot 2026-06-24 162159" src="https://github.com/user-attachments/assets/82911f7e-9576-4465-b7d9-a470177ebb44" />
 
 
 ---
 
 ## Trade Journal
 
-(Add screenshot here)
+
+<img width="1920" height="1080" alt="Screenshot 2026-06-25 105959" src="https://github.com/user-attachments/assets/b879da0e-e510-490f-b7b0-1bc857c08a84" />
 
 ---
 
 ## Analytics
-<img width="1920" height="1080" alt="Screenshot 2026-06-25 105959" src="https://github.com/user-attachments/assets/b879da0e-e510-490f-b7b0-1bc857c08a84" />
+
+<img width="1920" height="1080" alt="Screenshot 2026-06-24 161116" src="https://github.com/user-attachments/assets/8117b3d8-dc84-4b4f-8237-41ec2b84ad8b" />
+
 
 
 ---
 
 ## Settings
 
-(Add screenshot here)
+<img width="1920" height="1080" alt="Screenshot 2026-06-24 230642" src="https://github.com/user-attachments/assets/5436c436-e310-4162-aa7c-253af848546b" />
+
 
 ---
 
@@ -253,7 +258,7 @@ Interested in:
 - FinTech
 
 LinkedIn:
-(Add your LinkedIn)
+https://www.linkedin.com/in/mani-kanta-b31594371/?skipRedirect=true
 
 GitHub:
 https://github.com/manipenumajji
