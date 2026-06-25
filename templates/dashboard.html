@@ -1,0 +1,114 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<!-- ── Page Header ── -->
+<div class="page-header">
+    <div class="page-header-left">
+        <h1>Dashboard</h1>
+        <p>Welcome back, Mani. Here's your performance overview.</p>
+    </div>
+    <a href="/add_trade" class="btn-primary">
+        ＋ Add Trade
+    </a>
+</div>
+
+{% if trades %}
+
+<!-- ── KPI Row ── -->
+<div class="kpi-grid">
+
+    <div class="kpi-card">
+        <span class="kpi-icon">📊</span>
+        <div class="kpi-label">Total Trades</div>
+        <div class="kpi-value">{{ stats.total_trades }}</div>
+        <div class="kpi-sub">All time</div>
+    </div>
+
+    <div class="kpi-card {% if stats.win_rate >= 50 %}accent-card{% endif %}">
+        <span class="kpi-icon">🎯</span>
+        <div class="kpi-label">Win Rate</div>
+        <div class="kpi-value {% if stats.win_rate >= 50 %}green{% else %}red{% endif %}">
+            {{ stats.win_rate }}%
+        </div>
+        <div class="kpi-sub">Based on PnL</div>
+    </div>
+
+    <div class="kpi-card">
+        <span class="kpi-icon">💰</span>
+        <div class="kpi-label">Total PnL</div>
+        <div class="kpi-value {% if stats.total_pnl >= 0 %}green{% else %}red{% endif %}">
+            {% if stats.total_pnl >= 0 %}+{% endif %}₹{{ stats.total_pnl }}
+        </div>
+        <div class="kpi-sub">Cumulative</div>
+    </div>
+
+    <div class="kpi-card">
+        <span class="kpi-icon">⚡</span>
+        <div class="kpi-label">Avg PnL / Trade</div>
+        <div class="kpi-value {% if stats.avg_pnl >= 0 %}green{% else %}red{% endif %}">
+            {% if stats.avg_pnl >= 0 %}+{% endif %}₹{{ stats.avg_pnl }}
+        </div>
+        <div class="kpi-sub">Per trade</div>
+    </div>
+
+</div>
+
+<!-- ── Recent Trades ── -->
+<div class="table-card">
+    <div class="table-card-header">
+        <h2>Recent Trades</h2>
+        <a href="/trades">View all →</a>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Symbol</th>
+                <th>Side</th>
+                <th>Entry</th>
+                <th>Exit</th>
+                <th>PnL</th>
+                <th>Strategy</th>
+                <th>Date</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for trade in trades[:10] %}
+            <tr>
+                <td class="td-symbol">{{ trade.symbol | upper }}</td>
+                <td>
+                    <span class="badge {% if trade.side == 'Long' %}badge-long{% else %}badge-short{% endif %}">
+                        {{ trade.side }}
+                    </span>
+                </td>
+                <td class="muted" style="font-family: var(--font-mono);">{{ trade.entry_price }}</td>
+                <td class="muted" style="font-family: var(--font-mono);">{{ trade.exit_price }}</td>
+                <td class="td-pnl {% if trade.pnl >= 0 %}profit{% else %}loss{% endif %}">
+                    {% if trade.pnl >= 0 %}+{% endif %}₹{{ trade.pnl }}
+                </td>
+                <td class="muted">{{ trade.strategy or '—' }}</td>
+                <td class="muted" style="font-size: 12px;">{{ trade.date }}</td>
+                <td>
+                    <a href="/trade/{{ trade.id }}" class="btn-view">View</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% else %}
+
+<!-- ── Empty State ── -->
+<div class="table-card">
+    <div class="empty-state">
+        <div class="empty-state-icon">📋</div>
+        <h3>No trades yet</h3>
+        <p>Start tracking your performance. <a href="/add_trade">Add your first trade →</a></p>
+    </div>
+</div>
+
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,176 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <h1>Settings</h1>
+        <p>Manage your CoinDCX API connection and sync preferences.</p>
+    </div>
+</div>
+
+<div style="max-width: 620px; display: flex; flex-direction: column; gap: 16px;">
+
+    <!-- Connection Status -->
+    <div class="card">
+        <div class="card-title">API Connection</div>
+
+        <div style="display:flex; align-items:center; justify-content:space-between;
+                    background:#0f1117; border:1px solid #30363d; border-radius:10px;
+                    padding:14px 16px; margin-bottom:16px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <div id="conn-dot" style="width:10px;height:10px;border-radius:50%;background:#30363d;"></div>
+                <span id="conn-status" style="color:#8b949e; font-size:13px;">
+                    Not tested yet
+                </span>
+            </div>
+            <button
+                onclick="testConnection()"
+                style="background:rgba(57,217,138,0.1); color:#39d98a;
+                       border:1px solid rgba(57,217,138,0.3); border-radius:8px;
+                       padding:7px 16px; font-size:12px; font-weight:600; cursor:pointer;">
+                Test Connection
+            </button>
+        </div>
+
+        {% if masked_key %}
+        <div style="color:#8b949e; font-size:12px; margin-bottom:4px;">Current API Key</div>
+        <div style="background:#0f1117; border:1px solid #30363d; border-radius:8px;
+                    padding:9px 12px; color:#e6edf3; font-size:13px; font-family:monospace;
+                    margin-bottom:16px;">
+            {{ masked_key }}
+        </div>
+        {% endif %}
+
+        {% if saved %}
+        <div style="background:rgba(57,217,138,0.1); border:1px solid rgba(57,217,138,0.3);
+                    border-radius:8px; padding:10px 14px; color:#39d98a; font-size:13px;
+                    margin-bottom:16px;">
+            ✓ API keys saved successfully.
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Update Keys -->
+    <div class="card">
+        <div class="card-title">Update API Keys</div>
+        <p style="color:#8b949e; font-size:12px; margin-bottom:16px;">
+            Generate keys from CoinDCX → Profile → API Keys. Keep them private.
+        </p>
+
+        <form method="POST">
+            <div class="form-group" style="margin-bottom:14px;">
+                <label>API Key</label>
+                <input type="text" name="api_key" placeholder="Paste your CoinDCX API key">
+            </div>
+            <div class="form-group" style="margin-bottom:16px;">
+                <label>API Secret</label>
+                <input type="password" name="api_secret" placeholder="Paste your CoinDCX API secret">
+            </div>
+            <button type="submit" class="btn-save" style="padding:11px;">
+                Save Keys
+            </button>
+        </form>
+    </div>
+
+    <!-- Manual Sync -->
+    <div class="card">
+        <div class="card-title">Sync Trades</div>
+        <p style="color:#8b949e; font-size:12px; margin-bottom:16px;">
+            Auto-sync runs every 15 minutes. You can also trigger it manually.
+        </p>
+
+        <div style="display:flex; align-items:center; justify-content:space-between;
+                    margin-bottom:12px;">
+            <div>
+                <div style="color:#8b949e; font-size:12px;">Last sync</div>
+                <div style="color:#e6edf3; font-size:13px; font-weight:600; margin-top:2px;">
+                    {% if last_sync %}{{ last_sync }}{% else %}Never{% endif %}
+                </div>
+            </div>
+            <button
+                id="sync-btn"
+                onclick="runSync()"
+                style="background:#39d98a; color:#0f1117; border:none; border-radius:8px;
+                       padding:9px 20px; font-size:13px; font-weight:700; cursor:pointer;">
+                ⟳ Sync Now
+            </button>
+        </div>
+
+        <div id="sync-result" style="display:none; border-radius:8px; padding:10px 14px;
+                                      font-size:13px; margin-top:8px;"></div>
+    </div>
+
+    <!-- Upcoming -->
+    <div class="card">
+        <div class="card-title">Upcoming</div>
+        {% for f in [
+            "V2 — Binance / Bybit import",
+            "V3 — Cloud PostgreSQL sync",
+            "V4 — AI Trade Review",
+            "V5 — AI Trading Coach"
+        ] %}
+        <div style="display:flex; align-items:center; gap:10px; padding:9px 0;
+                    border-bottom:1px solid #30363d; font-size:13px;">
+            <span style="color:#39d98a; font-size:10px;">◦</span>
+            <span style="color:#8b949e;">{{ f }}</span>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+
+<script>
+function testConnection() {
+    const dot    = document.getElementById('conn-dot');
+    const status = document.getElementById('conn-status');
+    dot.style.background    = "#facc15";
+    status.textContent      = "Testing...";
+    status.style.color      = "#facc15";
+
+    fetch('/api/test_connection', { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            dot.style.background = data.ok ? '#39d98a' : '#f75f6b';
+            status.textContent   = data.message;
+            status.style.color   = data.ok ? '#39d98a' : '#f75f6b';
+        })
+        .catch(() => {
+            dot.style.background = '#f75f6b';
+            status.textContent   = 'Connection failed';
+            status.style.color   = '#f75f6b';
+        });
+}
+
+function runSync() {
+    const btn    = document.getElementById('sync-btn');
+    const result = document.getElementById('sync-result');
+    btn.textContent = "Syncing...";
+    btn.disabled    = true;
+
+    fetch('/api/sync', { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            result.style.display     = 'block';
+            result.style.background  = data.ok ? 'rgba(57,217,138,0.1)' : 'rgba(247,95,107,0.1)';
+            result.style.border      = data.ok ? '1px solid rgba(57,217,138,0.3)' : '1px solid rgba(247,95,107,0.3)';
+            result.style.color       = data.ok ? '#39d98a' : '#f75f6b';
+            result.textContent       = data.message;
+            btn.textContent          = "⟳ Sync Now";
+            btn.disabled             = false;
+            if (data.ok && data.imported > 0) {
+                setTimeout(() => location.reload(), 2000);
+            }
+        })
+        .catch(() => {
+            result.style.display    = 'block';
+            result.style.background = 'rgba(247,95,107,0.1)';
+            result.style.color      = '#f75f6b';
+            result.textContent      = 'Sync failed — check your connection.';
+            btn.textContent         = "⟳ Sync Now";
+            btn.disabled            = false;
+        });
+}
+</script>
+
+{% endblock %}

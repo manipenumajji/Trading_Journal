@@ -1,0 +1,326 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<div class="page-header">
+    <div class="page-header-left">
+        <h1>Trades</h1>
+        <p>{{ trades|length }} trade{% if trades|length != 1 %}s{% endif %} logged.</p>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px;">
+        <div class="currency-toggle" id="currency-toggle" onclick="toggleCurrency()" title="Switch currency">
+            <span class="currency-opt" id="label-usd">USD</span>
+            <span class="currency-sep">·</span>
+            <span class="currency-opt" id="label-inr">INR</span>
+            <div class="currency-pill" id="currency-pill"></div>
+        </div>
+        <a href="/add_trade" class="btn-primary">＋ Add Trade</a>
+    </div>
+</div>
+
+<!-- ── Search & Filter Bar ── -->
+<div class="card" style="margin-bottom: 14px; padding: 1rem 1.35rem;">
+    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+
+        <div style="position: relative; flex: 1; min-width: 200px;">
+            <span style="position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+                         color: var(--text-muted); font-size: 14px; pointer-events: none;">🔍</span>
+            <input
+                type="text"
+                id="search-input"
+                placeholder="Search symbol, strategy, emotion..."
+                style="width: 100%; background: var(--bg-surface); border: 1px solid var(--border);
+                       border-radius: var(--radius-md); padding: 9px 12px 9px 34px;
+                       color: var(--text-primary); font-size: 13px; outline: none;
+                       transition: var(--transition); font-family: inherit;"
+                onfocus="this.style.borderColor='var(--accent)'; this.style.boxShadow='0 0 0 3px var(--accent-dim)'"
+                onblur="this.style.borderColor='var(--border)'; this.style.boxShadow='none'"
+            >
+        </div>
+
+        <div style="display: flex; gap: 6px;">
+            <button class="filter-btn active" onclick="filterTrades('all', this)">All</button>
+            <button class="filter-btn" onclick="filterTrades('win', this)">Wins</button>
+            <button class="filter-btn" onclick="filterTrades('loss', this)">Losses</button>
+        </div>
+
+    </div>
+</div>
+
+<!-- ── Trades Table ── -->
+<div class="table-card">
+    <div class="table-card-header">
+        <h2>All Trades</h2>
+        <span id="visible-count" style="color: var(--text-muted); font-size: 12px; font-family: var(--font-mono);">
+            {{ trades|length }} results
+        </span>
+    </div>
+    <table id="trades-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Symbol</th>
+                <th>Side</th>
+                <th>PnL <span id="th-currency" style="color: var(--accent); font-weight: 700;"></span></th>
+                <th>Strategy</th>
+                <th>Emotion</th>
+                <th>Grade</th>
+                <th>Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="trades-body">
+            {% for trade in trades %}
+            <tr
+                class="trade-row"
+                data-symbol="{{ trade[1] }}"
+                data-strategy="{{ trade[4] or '' }}"
+                data-emotion="{{ trade[5] or '' }}"
+                data-pnl="{{ trade[3] }}"
+            >
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">#{{ trade[0] }}</td>
+
+                <td class="td-symbol">{{ trade[1] | upper }}</td>
+
+                <td>
+                    <span class="badge {% if trade[2] == 'Long' %}badge-long{% else %}badge-short{% endif %}">
+                        {{ trade[2] }}
+                    </span>
+                </td>
+
+                <!--  trade[6] = pnl  -->
+                <td class="td-pnl {% if trade[3] >= 0 %}profit{% else %}loss{% endif %}"
+                    data-usd="{{ trade[3] }}">
+                    {% if trade[3] >= 0 %}+{% endif %}${{ trade[3] }}
+                </td>
+
+                <!-- [4] strategy -->
+                <td class="muted">{{ trade[4] or '—' }}</td>
+
+                <!-- [5] emotion -->
+                <td>
+                    {% if trade[5] %}
+                        <span class="emotion-tag emotion-{{ trade[5] | lower }}">{{ trade[5] }}</span>
+                    {% else %}
+                        <span class="muted">—</span>
+                    {% endif %}
+                </td>
+
+                <!-- [6] trade_grade -->
+                <td>
+                    {% if trade[6] %}
+                        <span class="grade-badge grade-{{ trade[6] | replace('+','plus') }}">{{ trade[6] }}</span>
+                    {% else %}
+                        <span class="muted">—</span>
+                    {% endif %}
+                </td>
+
+                <!-- [7] trade_date -->
+                <td class="muted" style="font-size: 12px; font-family: var(--font-mono);">{{ trade[7] or '—' }}</td>
+
+                <td>
+                    <div style="display: flex; gap: 7px;">
+                        <a href="/trade/{{ trade[0] }}" class="btn-view">View</a>
+                        <a href="/delete_trade/{{ trade[0] }}" class="btn-danger"
+                           onclick="return confirm('Delete trade #{{ trade[0] }}?')">Delete</a>
+                    </div>
+                </td>
+
+            </tr>
+            {% endfor %}
+
+            {% if not trades %}
+            <tr>
+                <td colspan="9">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📋</div>
+                        <h3>No trades yet</h3>
+                        <p>Start building your edge. <a href="/add_trade">Log your first trade →</a></p>
+                    </div>
+                </td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<!-- ── Styles ── -->
+<style>
+/* Filter buttons */
+.filter-btn {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 7px 15px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+    font-family: var(--font-sans);
+}
+.filter-btn:hover {
+    color: var(--text-primary);
+    border-color: var(--border-hover);
+    background: rgba(255,255,255,0.04);
+}
+.filter-btn.active {
+    background: var(--accent-dim);
+    color: var(--accent);
+    border-color: var(--border-accent);
+    font-weight: 600;
+}
+
+/* Currency toggle */
+.currency-toggle {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 6px 14px;
+    cursor: pointer;
+    user-select: none;
+    transition: var(--transition);
+    font-size: 12px;
+    font-weight: 600;
+    font-family: var(--font-mono);
+    letter-spacing: 0.5px;
+    overflow: hidden;
+}
+.currency-toggle:hover { border-color: var(--border-hover); }
+
+.currency-opt {
+    position: relative;
+    z-index: 2;
+    color: var(--text-muted);
+    transition: color 0.25s ease;
+    padding: 0 4px;
+}
+.currency-opt.active-label { color: var(--bg-base); }
+
+.currency-sep {
+    color: var(--border-hover);
+    z-index: 2;
+}
+
+.currency-pill {
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    width: 38px;
+    background: var(--accent);
+    border-radius: 999px;
+    left: 8px;
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.3s ease;
+    box-shadow: 0 0 10px var(--accent-glow);
+    z-index: 1;
+}
+.currency-pill.inr-active { left: calc(100% - 46px); }
+
+/* Emotion tags */
+.emotion-tag {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 99px;
+    font-family: var(--font-mono);
+}
+.emotion-confident { background: rgba(57,217,138,0.12); color: #39d98a; border: 1px solid rgba(57,217,138,0.25); }
+.emotion-calm      { background: rgba(88,166,255,0.12); color: #58a6ff; border: 1px solid rgba(88,166,255,0.25); }
+.emotion-fearful   { background: rgba(247,95,107,0.12); color: #f75f6b; border: 1px solid rgba(247,95,107,0.25); }
+.emotion-greedy    { background: rgba(240,163,72,0.12); color: #f0a348; border: 1px solid rgba(240,163,72,0.25); }
+.emotion-fomo      { background: rgba(240,163,72,0.12); color: #f0a348; border: 1px solid rgba(240,163,72,0.25); }
+
+/* Grade badges */
+.grade-badge {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 5px;
+    font-family: var(--font-mono);
+}
+.grade-Aplus { background: rgba(57,217,138,0.2); color: #39d98a; border: 1px solid rgba(57,217,138,0.4); }
+.grade-A     { background: rgba(57,217,138,0.12); color: #5ef5a8; border: 1px solid rgba(57,217,138,0.25); }
+.grade-B     { background: rgba(88,166,255,0.12); color: #58a6ff; border: 1px solid rgba(88,166,255,0.25); }
+.grade-C     { background: rgba(240,163,72,0.12); color: #f0a348; border: 1px solid rgba(240,163,72,0.25); }
+.grade-D     { background: rgba(247,95,107,0.12); color: #f75f6b; border: 1px solid rgba(247,95,107,0.25); }
+</style>
+
+<!-- ── Script ── -->
+<script>
+const USD_TO_INR = 83.5; // update as needed
+let isINR = false;
+
+const rows          = document.querySelectorAll('.trade-row');
+const searchInput   = document.getElementById('search-input');
+const visibleCount  = document.getElementById('visible-count');
+const thCurrency    = document.getElementById('th-currency');
+const pill          = document.getElementById('currency-pill');
+const labelUSD      = document.getElementById('label-usd');
+const labelINR      = document.getElementById('label-inr');
+let currentFilter   = 'all';
+
+// ── Currency Toggle ──
+function toggleCurrency() {
+    isINR = !isINR;
+
+    pill.classList.toggle('inr-active', isINR);
+    labelUSD.classList.toggle('active-label', !isINR);
+    labelINR.classList.toggle('active-label', isINR);
+
+    thCurrency.textContent = isINR ? '(₹)' : '($)';
+
+    document.querySelectorAll('td[data-usd]').forEach(td => {
+        const usd = parseFloat(td.dataset.usd);
+        const val = isINR ? usd * USD_TO_INR : usd;
+        const sym = isINR ? '₹' : '$';
+        const prefix = val >= 0 ? '+' : '';
+        td.textContent = prefix + sym + val.toFixed(2);
+    });
+}
+
+// ── Filter & Search ──
+function updateVisibleCount() {
+    const visible = Array.from(rows).filter(r => r.style.display !== 'none').length;
+    visibleCount.textContent = visible + ' result' + (visible !== 1 ? 's' : '');
+}
+
+function applyFilters() {
+    const query = searchInput.value.toLowerCase();
+    rows.forEach(row => {
+        const symbol   = row.dataset.symbol.toLowerCase();
+        const strategy = row.dataset.strategy.toLowerCase();
+        const emotion  = row.dataset.emotion.toLowerCase();
+        const pnl      = parseFloat(row.dataset.pnl);
+
+        const matchesSearch  = symbol.includes(query) || strategy.includes(query) || emotion.includes(query);
+        const matchesFilter  =
+            currentFilter === 'all' ||
+            (currentFilter === 'win'  && pnl >= 0) ||
+            (currentFilter === 'loss' && pnl < 0);
+
+        row.style.display = matchesSearch && matchesFilter ? '' : 'none';
+    });
+    updateVisibleCount();
+}
+
+function filterTrades(type, btn) {
+    currentFilter = type;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    applyFilters();
+}
+
+searchInput.addEventListener('input', applyFilters);
+
+// init state
+labelUSD.classList.add('active-label');
+thCurrency.textContent = '($)';
+updateVisibleCount();
+</script>
+
+{% endblock %}
