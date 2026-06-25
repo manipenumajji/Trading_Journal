@@ -1,0 +1,430 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<div class="page-header">
+    <div class="page-header-left">
+        <h1>Analytics</h1>
+        <p>Raw trades turned into actionable insights.</p>
+    </div>
+</div>
+
+{% if not data %}
+
+<div class="table-card">
+    <div class="empty-state">
+        <div class="empty-state-icon">📈</div>
+        <h3>No data to analyze</h3>
+        <p>Add some trades to start seeing your analytics. <a href="/add_trade">Add your first trade →</a></p>
+    </div>
+</div>
+
+{% else %}
+
+<!-- ── KPI Row ── -->
+<div class="kpi-grid" style="margin-bottom: 1.5rem;">
+
+    <div class="kpi-card">
+        <span class="kpi-icon">💰</span>
+        <div class="kpi-label">Total PnL</div>
+        <div class="kpi-value {% if data.total_pnl >= 0 %}green{% else %}red{% endif %}">
+            {% if data.total_pnl >= 0 %}+{% endif %}₹{{ data.total_pnl }}
+        </div>
+        <div class="kpi-sub">Cumulative</div>
+    </div>
+
+    <div class="kpi-card {% if data.win_rate >= 50 %}accent-card{% endif %}">
+        <span class="kpi-icon">🎯</span>
+        <div class="kpi-label">Win Rate</div>
+        <div class="kpi-value {% if data.win_rate >= 50 %}green{% else %}red{% endif %}">
+            {{ data.win_rate }}%
+        </div>
+        <div class="kpi-sub">{{ data.wins }}W / {{ data.losses }}L</div>
+    </div>
+
+    <div class="kpi-card">
+        <span class="kpi-icon">⬆️</span>
+        <div class="kpi-label">Best Trade</div>
+        <div class="kpi-value green">+₹{{ data.best_trade }}</div>
+        <div class="kpi-sub">Single trade</div>
+    </div>
+
+    <div class="kpi-card">
+        <span class="kpi-icon">⬇️</span>
+        <div class="kpi-label">Worst Trade</div>
+        <div class="kpi-value red">₹{{ data.worst_trade }}</div>
+        <div class="kpi-sub">Single trade</div>
+    </div>
+
+</div>
+
+<!-- ── Equity Curve + Win/Loss ── -->
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 16px;">
+
+    <div class="card">
+        <div class="card-title">Equity Curve</div>
+        <div class="card-subtitle">Cumulative PnL over your trades</div>
+        <div class="chart-container">
+            <canvas id="equityChart" height="200"></canvas>
+        </div>
+    </div>
+
+    <div class="card" style="display: flex; flex-direction: column; align-items: center;">
+        <div class="card-title" style="width: 100%;">Win / Loss</div>
+        <div class="card-subtitle" style="width: 100%;">Trade outcome distribution</div>
+        <canvas id="pieChart" width="200" height="200"></canvas>
+        <div style="display: flex; gap: 20px; margin-top: 14px;">
+            <div style="display: flex; align-items: center; gap: 7px;">
+                <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 6px var(--accent);"></div>
+                <span style="color: var(--text-secondary); font-size: 12px; font-family: var(--font-mono);">Wins ({{ data.wins }})</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 7px;">
+                <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--red); box-shadow: 0 0 6px var(--red);"></div>
+                <span style="color: var(--text-secondary); font-size: 12px; font-family: var(--font-mono);">Losses ({{ data.losses }})</span>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ── PnL Distribution + Strategy Breakdown ── -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+
+    <div class="card">
+        <div class="card-title">PnL Distribution</div>
+        <div class="card-subtitle">How your trade PnLs are spread</div>
+        <div class="chart-container">
+            <canvas id="histogramChart" height="220"></canvas>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">Strategy Breakdown</div>
+        <div class="card-subtitle">Which strategies you use most</div>
+        {% for name, info in data.strategy_map.items() %}
+        <div class="strategy-item">
+            <div class="strategy-header">
+                <span class="strategy-name">{{ name }}</span>
+                <span class="strategy-pnl {% if info.pnl >= 0 %}profit{% else %}loss{% endif %}">
+                    {% if info.pnl >= 0 %}+{% endif %}₹{{ info.pnl }}
+                </span>
+            </div>
+            <div class="strategy-bar-track">
+                <div class="strategy-bar-fill"
+                     style="width: {{ ((info.count / data.total_trades) * 100)|round }}%;
+                     {% if info.pnl < 0 %}background: linear-gradient(90deg, var(--red), #f97583); box-shadow: 0 0 8px var(--red-glow);{% endif %}">
+                </div>
+            </div>
+            <div class="strategy-meta">{{ info.count }} trades · {{ ((info.count / data.total_trades) * 100)|round }}%</div>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+
+<!-- ── Emotion Impact ── -->
+<div class="card">
+    <div class="card-title">Emotion Impact</div>
+    <div class="card-subtitle">What emotions cost or earn you money</div>
+    <div class="chart-container">
+        <canvas id="emotionChart" height="120"></canvas>
+    </div>
+</div>
+
+{% endif %}
+
+{% if data %}
+<script>
+const ACCENT = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || "#39d98a";
+const LOSS   = getComputedStyle(document.documentElement).getPropertyValue('--red').trim()    || "#f75f6b";
+const MUTED  = getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() || "#4a5568";
+const BORDER = getComputedStyle(document.documentElement).getPropertyValue('--border').trim()  || "#1e2d3d";
+const BG     = getComputedStyle(document.documentElement).getPropertyValue('--bg-card').trim() || "#111720";
+
+// ── Equity Curve ──
+(function() {
+    const canvas = document.getElementById("equityChart");
+    if (!canvas) return;
+    const equity = {{ data.equity | tojson }};
+    const ctx    = canvas.getContext("2d");
+    const W      = canvas.parentElement.clientWidth - 10;
+    canvas.width = W;
+    const H = 200;
+    canvas.height = H;
+
+    const pad = { l: 55, r: 20, t: 20, b: 30 };
+    const w = W - pad.l - pad.r;
+    const h = H - pad.t - pad.b;
+    const min = Math.min(...equity, 0) - 50;
+    const max = Math.max(...equity) + 50;
+
+    const xPos = i => pad.l + (i / (equity.length - 1 || 1)) * w;
+    const yPos = v => pad.t + h - ((v - min) / (max - min)) * h;
+
+    // Grid lines
+    for (let i = 0; i <= 4; i++) {
+        const yy  = pad.t + (i / 4) * h;
+        const val = max - (i / 4) * (max - min);
+        ctx.strokeStyle = BORDER;
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath(); ctx.moveTo(pad.l, yy); ctx.lineTo(W - pad.r, yy); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = MUTED;
+        ctx.font = "11px 'JetBrains Mono', monospace";
+        ctx.textAlign = "right";
+        ctx.fillText("₹" + Math.round(val), pad.l - 8, yy + 4);
+    }
+
+    // Gradient fill
+    const grad = ctx.createLinearGradient(0, pad.t, 0, H);
+    grad.addColorStop(0, "rgba(57,217,138,0.2)");
+    grad.addColorStop(0.6, "rgba(57,217,138,0.06)");
+    grad.addColorStop(1, "rgba(57,217,138,0)");
+
+    ctx.beginPath();
+    equity.forEach((v, i) => i === 0 ? ctx.moveTo(xPos(i), yPos(v)) : ctx.lineTo(xPos(i), yPos(v)));
+    ctx.lineTo(xPos(equity.length - 1), H - pad.b);
+    ctx.lineTo(xPos(0), H - pad.b);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Glow line (thicker, dimmer)
+    ctx.beginPath();
+    equity.forEach((v, i) => i === 0 ? ctx.moveTo(xPos(i), yPos(v)) : ctx.lineTo(xPos(i), yPos(v)));
+    ctx.strokeStyle = "rgba(57,217,138,0.2)";
+    ctx.lineWidth = 6;
+    ctx.lineJoin = "round";
+    ctx.stroke();
+
+    // Main line
+    ctx.beginPath();
+    equity.forEach((v, i) => i === 0 ? ctx.moveTo(xPos(i), yPos(v)) : ctx.lineTo(xPos(i), yPos(v)));
+    ctx.strokeStyle = ACCENT;
+    ctx.lineWidth = 2.5;
+    ctx.lineJoin = "round";
+    ctx.stroke();
+
+    // Dots
+    equity.forEach((v, i) => {
+        // Glow
+        ctx.beginPath();
+        ctx.arc(xPos(i), yPos(v), 7, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(57,217,138,0.15)";
+        ctx.fill();
+        // Dot
+        ctx.beginPath();
+        ctx.arc(xPos(i), yPos(v), 4, 0, Math.PI * 2);
+        ctx.fillStyle = ACCENT;
+        ctx.fill();
+        ctx.strokeStyle = BG;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    });
+})();
+
+// ── Win/Loss Donut ──
+(function() {
+    const canvas = document.getElementById("pieChart");
+    if (!canvas) return;
+    const wins   = {{ data.wins }};
+    const losses = {{ data.losses }};
+    const total  = wins + losses;
+    const ctx    = canvas.getContext("2d");
+    const cx = 100, cy = 100, r = 78, inner = 52;
+
+    const wAngle = (wins / total) * Math.PI * 2;
+
+    // Win arc
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + wAngle);
+    ctx.closePath();
+    ctx.fillStyle = ACCENT;
+    ctx.fill();
+
+    // Loss arc
+    if (losses > 0) {
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, r, -Math.PI / 2 + wAngle, -Math.PI / 2 + Math.PI * 2);
+        ctx.closePath();
+        ctx.fillStyle = LOSS;
+        ctx.fill();
+    }
+
+    // Donut hole
+    ctx.beginPath();
+    ctx.arc(cx, cy, inner, 0, Math.PI * 2);
+    ctx.fillStyle = BG;
+    ctx.fill();
+
+    // Ring border
+    ctx.beginPath();
+    ctx.arc(cx, cy, inner, 0, Math.PI * 2);
+    ctx.strokeStyle = BORDER;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Center text
+    ctx.fillStyle = "#e8eef4";
+    ctx.font = "bold 20px 'JetBrains Mono', monospace";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(Math.round(wins / total * 100) + "%", cx, cy - 9);
+    ctx.fillStyle = MUTED;
+    ctx.font = "11px 'Inter', sans-serif";
+    ctx.fillText("Win Rate", cx, cy + 12);
+})();
+
+// ── PnL Histogram ──
+(function() {
+    const canvas = document.getElementById("histogramChart");
+    if (!canvas) return;
+    const pnls = {{ data.pnl_values | tojson }};
+    const ctx  = canvas.getContext("2d");
+    const W = canvas.parentElement.clientWidth - 10;
+    canvas.width = W;
+    const H = 220;
+    canvas.height = H;
+
+    if (pnls.length === 0) return;
+
+    const bins    = 8;
+    const minVal  = Math.min(...pnls);
+    const maxVal  = Math.max(...pnls);
+    const range   = maxVal - minVal || 1;
+    const binSize = range / bins;
+    const counts  = new Array(bins).fill(0);
+    pnls.forEach(p => {
+        let idx = Math.floor((p - minVal) / binSize);
+        if (idx >= bins) idx = bins - 1;
+        counts[idx]++;
+    });
+
+    const pad = { l: 40, r: 20, t: 20, b: 40 };
+    const w = W - pad.l - pad.r;
+    const h = H - pad.t - pad.b;
+    const maxCnt = Math.max(...counts);
+    const barW = w / bins - 5;
+
+    // Grid
+    for (let i = 0; i <= 4; i++) {
+        const yy = pad.t + (i / 4) * h;
+        ctx.strokeStyle = BORDER;
+        ctx.lineWidth = 0.8;
+        ctx.setLineDash([3, 4]);
+        ctx.beginPath(); ctx.moveTo(pad.l, yy); ctx.lineTo(W - pad.r, yy); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = MUTED;
+        ctx.font = "10px 'JetBrains Mono', monospace";
+        ctx.textAlign = "right";
+        ctx.fillText(Math.round(maxCnt - (i / 4) * maxCnt), pad.l - 6, yy + 4);
+    }
+
+    counts.forEach((count, i) => {
+        const x       = pad.l + i * (w / bins) + 2.5;
+        const barH    = (count / maxCnt) * h;
+        const y       = pad.t + h - barH;
+        const binMid  = minVal + (i + 0.5) * binSize;
+        const isProfit = binMid >= 0;
+
+        // Glow
+        ctx.fillStyle = isProfit ? "rgba(57,217,138,0.08)" : "rgba(247,95,107,0.08)";
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(x - 2, y - 2, barW + 4, barH + 2, 4);
+        else ctx.rect(x - 2, y - 2, barW + 4, barH + 2);
+        ctx.fill();
+
+        // Bar
+        const barGrad = ctx.createLinearGradient(0, y, 0, y + barH);
+        if (isProfit) {
+            barGrad.addColorStop(0, "rgba(57,217,138,0.85)");
+            barGrad.addColorStop(1, "rgba(57,217,138,0.45)");
+        } else {
+            barGrad.addColorStop(0, "rgba(247,95,107,0.85)");
+            barGrad.addColorStop(1, "rgba(247,95,107,0.45)");
+        }
+
+        ctx.fillStyle = barGrad;
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(x, y, barW, barH, [4, 4, 0, 0]);
+        else ctx.rect(x, y, barW, barH);
+        ctx.fill();
+
+        // X label
+        ctx.fillStyle = MUTED;
+        ctx.font = "10px 'JetBrains Mono', monospace";
+        ctx.textAlign = "center";
+        ctx.fillText("₹" + Math.round(binMid), x + barW / 2, H - 10);
+    });
+})();
+
+// ── Emotion Chart ──
+(function() {
+    const canvas = document.getElementById("emotionChart");
+    if (!canvas) return;
+    const emotionMap = {{ data.emotion_map | tojson }};
+    const labels = Object.keys(emotionMap);
+    const values = Object.values(emotionMap);
+    if (labels.length === 0) return;
+
+    const ctx = canvas.getContext("2d");
+    const W = canvas.parentElement.clientWidth - 10;
+    canvas.width = W;
+    const H = 120;
+    canvas.height = H;
+
+    const pad = { l: 90, r: 30, t: 10, b: 10 };
+    const w = W - pad.l - pad.r;
+    const h = H - pad.t - pad.b;
+    const maxAbs = Math.max(...values.map(Math.abs), 1);
+    const rowH = h / labels.length;
+    const zeroX = pad.l + w / 2;
+
+    // Zero line
+    ctx.strokeStyle = BORDER;
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(zeroX, pad.t); ctx.lineTo(zeroX, H - pad.b); ctx.stroke();
+
+    labels.forEach((label, i) => {
+        const val  = values[i];
+        const y    = pad.t + i * rowH + rowH * 0.18;
+        const barH = rowH * 0.64;
+        const barW = (Math.abs(val) / maxAbs) * (w / 2 - 12);
+        const isPos = val >= 0;
+
+        // Label
+        ctx.fillStyle = MUTED;
+        ctx.font = "12px 'Inter', sans-serif";
+        ctx.textAlign = "right";
+        ctx.textBaseline = "middle";
+        ctx.fillText(label, pad.l - 10, y + barH / 2);
+
+        // Glow
+        ctx.fillStyle = isPos ? "rgba(57,217,138,0.08)" : "rgba(247,95,107,0.08)";
+        const barX = isPos ? zeroX : zeroX - barW;
+        ctx.beginPath();
+        ctx.rect(barX - 2, y - 1, barW + 4, barH + 2);
+        ctx.fill();
+
+        // Bar
+        ctx.fillStyle = isPos ? "rgba(57,217,138,0.75)" : "rgba(247,95,107,0.75)";
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(barX, y, barW, barH, 3);
+        else ctx.rect(barX, y, barW, barH);
+        ctx.fill();
+
+        // Value label
+        ctx.fillStyle = isPos ? ACCENT : LOSS;
+        ctx.font = "11px 'JetBrains Mono', monospace";
+        ctx.textAlign = isPos ? "left" : "right";
+        const valX = isPos ? zeroX + barW + 7 : zeroX - barW - 7;
+        ctx.fillText((val >= 0 ? "+" : "") + "₹" + val, valX, y + barH / 2);
+    });
+})();
+</script>
+{% endif %}
+
+{% endblock %}

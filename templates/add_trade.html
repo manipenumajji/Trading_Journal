@@ -1,0 +1,419 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<div class="page-header">
+    <div class="page-header-left">
+        <h1>Add Trade</h1>
+        <p>Log a new trade with full details.</p>
+    </div>
+    <div class="currency-toggle-mini" id="currency-toggle" onclick="toggleCurrency()" title="Toggle PnL preview currency">
+        <span id="lbl-usd" class="ctm-opt active-ctm">$ USD</span>
+        <span id="lbl-inr" class="ctm-opt">₹ INR</span>
+    </div>
+</div>
+
+<form method="POST" enctype="multipart/form-data">
+
+    <div class="add-trade-layout">
+
+        <!-- ── LEFT ── -->
+        <div class="add-trade-left">
+
+            <!-- Trade Details -->
+            <div class="card">
+                <div class="card-title">Trade Details</div>
+                <div class="card-subtitle">Core price & size information</div>
+                <div class="form-grid">
+
+                    <div class="form-group">
+                        <label>Symbol</label>
+                        <input type="text" name="symbol"
+                               placeholder="e.g. BTC/USDT, NIFTY, XRP..." required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Side</label>
+                        <select name="side" required>
+                            <option value="Long">Long</option>
+                            <option value="Short">Short</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Entry Price</label>
+                        <input type="number" name="entry_price"
+                               placeholder="e.g. 67200" step="any" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Exit Price</label>
+                        <input type="number" name="exit_price"
+                               placeholder="e.g. 68500" step="any" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Quantity</label>
+                        <input type="number" name="quantity"
+                               placeholder="e.g. 0.5" step="any" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="date" name="trade_date">
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Strategy & Psychology -->
+            <div class="card">
+                <div class="card-title">Strategy & Psychology</div>
+                <div class="card-subtitle">Track your setups and mindset</div>
+                <div class="form-grid-4">
+
+                    <div class="form-group">
+                        <label>Strategy</label>
+                        <input type="text" name="strategy"
+                               placeholder="e.g. SMC, Breakout...">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Timeframe</label>
+                        <select name="timeframe">
+                            <option value="1M">1M</option>
+                            <option value="5M">5M</option>
+                            <option value="15M" selected>15M</option>
+                            <option value="1H">1H</option>
+                            <option value="4H">4H</option>
+                            <option value="Daily">Daily</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Emotion</label>
+                        <select name="emotion">
+                            <option value="Confident">Confident</option>
+                            <option value="Calm">Calm</option>
+                            <option value="Fearful">Fearful</option>
+                            <option value="Greedy">Greedy</option>
+                            <option value="FOMO">FOMO</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Trade Grade</label>
+                        <select name="trade_grade">
+                            <option value="A+">A+</option>
+                            <option value="A">A</option>
+                            <option value="B">B</option>
+                            <option value="C">C</option>
+                            <option value="D">D</option>
+                        </select>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Notes -->
+            <div class="card">
+                <div class="card-title">Notes & Lessons</div>
+                <div class="card-subtitle">Reflect on your decision-making</div>
+                <div class="form-group">
+                    <textarea name="notes" rows="5"
+                        placeholder="Why did you enter? What was your thesis? Mistakes? Key lessons learned?"></textarea>
+                </div>
+            </div>
+
+            <!-- Screenshots -->
+            <div class="card">
+                <div class="card-title">Trade Screenshots</div>
+                <div class="card-subtitle">Before entry & after exit charts</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Before Entry Chart</label>
+                        <input type="file" name="before_image" accept="image/*">
+                        <div id="preview-before" style="margin-top:8px; display:none;">
+                            <img id="img-before" style="width:100%; border-radius: var(--radius-md);
+                                 border:1px solid var(--border); max-height:160px; object-fit:cover;">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>After Exit Chart</label>
+                        <input type="file" name="after_image" accept="image/*">
+                        <div id="preview-after" style="margin-top:8px; display:none;">
+                            <img id="img-after" style="width:100%; border-radius: var(--radius-md);
+                                 border:1px solid var(--border); max-height:160px; object-fit:cover;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ── RIGHT (sticky) ── -->
+        <div class="add-trade-right">
+
+            <!-- Summary -->
+            <div class="card">
+                <div class="card-title" style="margin-bottom: 14px;">Trade Summary</div>
+
+                <div class="summary-row">
+                    <span class="summary-label">Symbol</span>
+                    <span class="summary-value" id="prev-symbol">—</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">Side</span>
+                    <span class="summary-value" id="prev-side">Long</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">Timeframe</span>
+                    <span class="summary-value" id="prev-tf">15M</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">Strategy</span>
+                    <span class="summary-value" id="prev-strategy">—</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">Emotion</span>
+                    <span class="summary-value" id="prev-emotion">Confident</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">Grade</span>
+                    <span class="summary-value" id="prev-grade">A+</span>
+                </div>
+            </div>
+
+            <!-- Live PnL Card -->
+            <div class="card pnl-preview-card" id="pnl-card">
+                <div class="pnl-preview-label">
+                    Live PnL Preview
+                    <span id="pnl-currency-badge" class="pnl-currency-badge">USD</span>
+                </div>
+                <div class="pnl-display muted" id="pnl-display">—</div>
+                <div id="pnl-status" class="pnl-status-text"></div>
+
+                <!-- INR conversion line -->
+                <div id="pnl-conversion" class="pnl-conversion" style="display: none;">
+                    <span id="pnl-converted-value"></span>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-save">Save Trade →</button>
+
+        </div>
+
+    </div>
+
+</form>
+
+<!-- ── Styles ── -->
+<style>
+/* Mini currency toggle in header */
+.currency-toggle-mini {
+    display: flex;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: var(--font-mono);
+    font-weight: 600;
+}
+.ctm-opt {
+    padding: 7px 14px;
+    color: var(--text-muted);
+    transition: var(--transition);
+}
+.ctm-opt.active-ctm {
+    background: var(--accent-dim);
+    color: var(--accent);
+    border-color: var(--border-accent);
+}
+
+/* PnL preview card */
+.pnl-preview-card {
+    border-color: var(--border);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.pnl-preview-card.is-profit {
+    border-color: var(--border-accent);
+    box-shadow: 0 0 24px var(--accent-glow);
+}
+.pnl-preview-card.is-loss {
+    border-color: rgba(247,95,107,0.3);
+    box-shadow: 0 0 24px var(--red-glow);
+}
+
+.pnl-preview-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-secondary);
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    font-family: var(--font-mono);
+    margin-bottom: 10px;
+}
+
+.pnl-currency-badge {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.pnl-status-text {
+    font-size: 12px;
+    margin-top: 5px;
+    font-family: var(--font-mono);
+    font-weight: 500;
+}
+
+.pnl-conversion {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    font-family: var(--font-mono);
+    color: var(--text-secondary);
+}
+
+.pnl-conversion span { font-weight: 600; }
+</style>
+
+<!-- ── Script ── -->
+<script>
+const USD_TO_INR = 83.5;
+let isINR = false;
+
+// Form refs
+const symbolInput     = document.querySelector('input[name="symbol"]');
+const sideSelect      = document.querySelector('select[name="side"]');
+const entryInput      = document.querySelector('input[name="entry_price"]');
+const exitInput       = document.querySelector('input[name="exit_price"]');
+const qtyInput        = document.querySelector('input[name="quantity"]');
+const strategyInput   = document.querySelector('input[name="strategy"]');
+const timeframeSelect = document.querySelector('select[name="timeframe"]');
+const emotionSelect   = document.querySelector('select[name="emotion"]');
+const gradeSelect     = document.querySelector('select[name="trade_grade"]');
+
+// Preview refs
+const prevSymbol   = document.getElementById('prev-symbol');
+const prevSide     = document.getElementById('prev-side');
+const prevTF       = document.getElementById('prev-tf');
+const prevStrategy = document.getElementById('prev-strategy');
+const prevEmotion  = document.getElementById('prev-emotion');
+const prevGrade    = document.getElementById('prev-grade');
+
+const pnlDisplay    = document.getElementById('pnl-display');
+const pnlStatus     = document.getElementById('pnl-status');
+const pnlCard       = document.getElementById('pnl-card');
+const pnlConversion = document.getElementById('pnl-conversion');
+const pnlConverted  = document.getElementById('pnl-converted-value');
+const pnlCurrBadge  = document.getElementById('pnl-currency-badge');
+
+const lblUSD = document.getElementById('lbl-usd');
+const lblINR = document.getElementById('lbl-inr');
+
+// Image previews
+document.querySelector('input[name="before_image"]').addEventListener('change', function() {
+    previewImage(this, 'img-before', 'preview-before');
+});
+document.querySelector('input[name="after_image"]').addEventListener('change', function() {
+    previewImage(this, 'img-after', 'preview-after');
+});
+
+function previewImage(input, imgId, wrapperId) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        document.getElementById(imgId).src = e.target.result;
+        document.getElementById(wrapperId).style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+}
+
+// ── Currency Toggle ──
+function toggleCurrency() {
+    isINR = !isINR;
+    lblUSD.classList.toggle('active-ctm', !isINR);
+    lblINR.classList.toggle('active-ctm', isINR);
+    pnlCurrBadge.textContent = isINR ? 'INR' : 'USD';
+    updatePnL();
+}
+
+// ── PnL Calculator ──
+function updatePnL() {
+    const entry = parseFloat(entryInput.value);
+    const exit  = parseFloat(exitInput.value);
+    const qty   = parseFloat(qtyInput.value);
+    const side  = sideSelect.value;
+
+    if (entry && exit && qty) {
+        const usdPnl = side === "Long"
+            ? (exit - entry) * qty
+            : (entry - exit) * qty;
+
+        const displayVal = isINR ? usdPnl * USD_TO_INR : usdPnl;
+        const sym        = isINR ? '₹' : '$';
+        const isProfit   = usdPnl >= 0;
+
+        pnlDisplay.textContent = (isProfit ? '+' : '') + sym + Math.abs(displayVal).toFixed(2);
+        pnlDisplay.className   = 'pnl-display ' + (isProfit ? 'profit' : 'loss');
+
+        pnlStatus.textContent  = isProfit ? '✓ Profitable trade' : '✗ Losing trade';
+        pnlStatus.style.color  = isProfit ? 'var(--accent)' : 'var(--red)';
+
+        pnlCard.className = 'card pnl-preview-card ' + (isProfit ? 'is-profit' : 'is-loss');
+
+        // Show conversion line
+        if (isINR) {
+            pnlConverted.textContent = `≈ $${Math.abs(usdPnl).toFixed(2)} USD`;
+            pnlConversion.style.display = 'block';
+        } else {
+            const inrVal = usdPnl * USD_TO_INR;
+            pnlConverted.textContent = `≈ ₹${Math.abs(inrVal).toFixed(2)} INR`;
+            pnlConversion.style.display = 'block';
+        }
+
+    } else {
+        pnlDisplay.textContent  = '—';
+        pnlDisplay.className    = 'pnl-display muted';
+        pnlStatus.textContent   = '';
+        pnlCard.className       = 'card pnl-preview-card';
+        pnlConversion.style.display = 'none';
+    }
+}
+
+// ── Summary Preview ──
+function updateSummary() {
+    prevSymbol.textContent   = symbolInput.value   || '—';
+    prevSide.textContent     = sideSelect.value;
+    prevTF.textContent       = timeframeSelect.value;
+    prevStrategy.textContent = strategyInput.value || '—';
+    prevEmotion.textContent  = emotionSelect.value;
+    prevGrade.textContent    = gradeSelect.value;
+}
+
+// ── Event Listeners ──
+symbolInput.addEventListener('input', updateSummary);
+sideSelect.addEventListener('change',  () => { updateSummary(); updatePnL(); });
+strategyInput.addEventListener('input', updateSummary);
+timeframeSelect.addEventListener('change', updateSummary);
+emotionSelect.addEventListener('change', updateSummary);
+gradeSelect.addEventListener('change', updateSummary);
+entryInput.addEventListener('input', updatePnL);
+exitInput.addEventListener('input', updatePnL);
+qtyInput.addEventListener('input', updatePnL);
+</script>
+
+{% endblock %}

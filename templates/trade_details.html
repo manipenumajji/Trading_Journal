@@ -1,0 +1,172 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<div class="page-header">
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <a href="/trades"
+           style="background: transparent; border: 1px solid #30363d; color: #8b949e;
+                  border-radius: 8px; padding: 7px 14px; font-size: 13px;
+                  cursor: pointer; text-decoration: none;">
+            ← Back
+        </a>
+        <div>
+            <h1>{{ trade[1] }} — Trade #{{ trade[0] }}</h1>
+            <p>{{ trade[11] or 'No date recorded' }}</p>
+        </div>
+    </div>
+</div>
+
+<div class="detail-layout">
+
+    <!-- LEFT COLUMN -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+
+        <!-- Trade Summary -->
+        <div class="card">
+            <div class="card-title">Trade Summary</div>
+
+            <div class="detail-row">
+                <span class="detail-label">Symbol</span>
+                <span class="detail-value" style="font-weight: 700;">{{ trade[1] }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Side</span>
+                <span class="detail-value">
+                    {% if trade[2] == "Long" %}
+                        <span class="badge badge-long">Long</span>
+                    {% else %}
+                        <span class="badge badge-short">Short</span>
+                    {% endif %}
+                </span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Entry Price</span>
+                <span class="detail-value">${{ trade[3] }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Exit Price</span>
+                <span class="detail-value">${{ trade[4] }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Quantity</span>
+                <span class="detail-value">{{ trade[5] }}</span>
+            </div>
+        </div>
+
+        <!-- Strategy & Psychology -->
+        <div class="card">
+            <div class="card-title">Strategy & Psychology</div>
+
+            <div class="detail-row">
+                <span class="detail-label">Strategy</span>
+                <span class="detail-value">{{ trade[7] or '—' }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Timeframe</span>
+                <span class="detail-value">{{ trade[8] or '—' }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Emotion</span>
+                <span class="detail-value">{{ trade[9] or '—' }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Trade Grade</span>
+                <span class="detail-value">{{ trade[15] or '—' }}</span>
+            </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="card" style="flex: 1;">
+            <div class="card-title">Notes & Lessons</div>
+            <p style="color: #8b949e; font-size: 13px; line-height: 1.7; margin: 0;">
+                {{ trade[10] or 'No notes recorded.' }}
+            </p>
+        </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+
+        <!-- PnL Card -->
+        <div class="card"
+             style="border-color: {% if trade[6] >= 0 %}#39d98a{% else %}#f75f6b{% endif %};
+                    background: {% if trade[6] >= 0 %}rgba(57,217,138,0.06){% else %}rgba(247,95,107,0.06){% endif %};">
+            <div class="kpi-label">Final PnL</div>
+            <div class="pnl-display {% if trade[6] >= 0 %}profit{% else %}loss{% endif %}">
+                {% if trade[6] >= 0 %}+{% endif %}${{ trade[6] }}
+            </div>
+            <div style="margin-top: 8px;">
+                {% if trade[6] >= 0 %}
+                    <span class="badge badge-long">Win</span>
+                {% else %}
+                    <span class="badge badge-short">Loss</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Screenshots -->
+        <div class="card">
+            <div class="card-title">Trade Screenshots</div>
+
+            {% if trade[12] or trade[13] %}
+                <div class="screenshot-grid">
+
+                    {% if trade[12] %}
+                    <div>
+                        <img
+                            src="{{ url_for('static', filename='uploads/' + trade[12]) }}"
+                            alt="Before Entry"
+                            onclick="openLightbox(this.src)"
+                        >
+                        <div class="screenshot-label">Before Entry</div>
+                    </div>
+                    {% endif %}
+
+                    {% if trade[13] %}
+                    <div>
+                        <img
+                            src="{{ url_for('static', filename='uploads/' + trade[13]) }}"
+                            alt="After Exit"
+                            onclick="openLightbox(this.src)"
+                        >
+                        <div class="screenshot-label">After Exit</div>
+                    </div>
+                    {% endif %}
+
+                </div>
+            {% else %}
+                <p style="color: #8b949e; font-size: 13px; margin: 0;">
+                    No screenshots uploaded for this trade.
+                </p>
+            {% endif %}
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+    <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+    <img id="lightbox-img" src="" alt="Trade Screenshot">
+</div>
+
+<script>
+    function openLightbox(src) {
+        document.getElementById('lightbox-img').src = src;
+        document.getElementById('lightbox').classList.add('open');
+    }
+
+    function closeLightbox() {
+        document.getElementById('lightbox').classList.remove('open');
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeLightbox();
+    });
+</script>
+
+{% endblock %}
