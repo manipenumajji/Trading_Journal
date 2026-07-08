@@ -42,6 +42,20 @@
 
     --transition:   all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
 }
+[data-theme="light"] {
+    --bg-base:      #f6f8fa;
+    --bg-surface:   #ffffff;
+    --bg-card:      #ffffff;
+    --bg-card-hover:#f0f3f6;
+    --bg-elevated:  #eef1f4;
+
+    --border:       #d8dee4;
+    --border-hover: #c0c9d1;
+
+    --text-primary: #1a1f26;
+    --text-secondary:#57606a;
+    --text-muted:   #8b949e;
+}
 
 /* ── Reset & Base ── */
 *, *::before, *::after {

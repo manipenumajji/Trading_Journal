@@ -11,6 +11,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script>
+    (function() {
+        const saved = localStorage.getItem('theme') || 'dark';
+        if (saved === 'light') {
+            document.documentElement.setAttribute('data-theme', 'light');
+        }
+    })();
+</script>
 </head>
 
 <body>
@@ -64,11 +72,6 @@
                 Add Trade
             </a>
 
-            <a href="/settings" class="nav-link {% if request.path == '/settings' %}active{% endif %}">
-                <span class="nav-icon">⚙</span>
-                Settings
-            </a>
-
         </nav>
 
         <div class="sidebar-footer">
@@ -83,6 +86,9 @@
             </div>
 
             <div class="status-dot"></div>
+            <button id="theme-toggle" onclick="toggleTheme()" style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--text-secondary);margin-left:8px;">
+    🌙
+</button>
 
         </div>
 
@@ -112,6 +118,18 @@ function closeSidebar() {
     document.getElementById("sidebar").classList.remove("show");
     document.querySelector(".sidebar-overlay").classList.remove("show");
 
+}
+function toggleTheme() {
+    const html = document.documentElement;
+    const isLight = html.getAttribute('data-theme') === 'light';
+    if (isLight) {
+        html.removeAttribute('data-theme');
+        localStorage.setItem('theme', 'dark');
+    } else {
+        html.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', 'light');
+    }
+    document.getElementById('theme-toggle').textContent = isLight ? '🌙' : '☀️';
 }
 
 </script>
