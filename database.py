@@ -1,11 +1,10 @@
-import sqlite3
+import os
+import psycopg2
 from datetime import datetime
-
-DB_NAME = "trades.db"
 
 
 def get_connection():
-    return sqlite3.connect(DB_NAME)
+    return psycopg2.connect(os.environ["DATABASE_URL"])
 
 
 def initialize_database():
@@ -15,7 +14,7 @@ def initialize_database():
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS trades(
-        id            INTEGER PRIMARY KEY AUTOINCREMENT,
+        id            SERIAL PRIMARY KEY,
         symbol        TEXT NOT NULL,
         side          TEXT NOT NULL,
         entry_price   REAL NOT NULL,
@@ -37,25 +36,25 @@ def initialize_database():
     try:
         cursor.execute("ALTER TABLE trades ADD COLUMN trade_grade TEXT")
         connection.commit()
-    except:
-        pass
+    except Exception:
+        connection.rollback()
 
     try:
         cursor.execute("ALTER TABLE trades ADD COLUMN source TEXT")
         connection.commit()
-    except:
-        pass
+    except Exception:
+        connection.rollback()
 
     try:
         cursor.execute("ALTER TABLE trades ADD COLUMN coindcx_id TEXT")
         connection.commit()
-    except:
-        pass
+    except Exception:
+        connection.rollback()
 
     # ── Sync-log table ──
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS sync_log (
-        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        id          SERIAL PRIMARY KEY,
         synced_at   TEXT NOT NULL,
         imported    INTEGER DEFAULT 0,
         skipped     INTEGER DEFAULT 0,
@@ -63,6 +62,7 @@ def initialize_database():
     )
     """)
     connection.commit()
+    cursor.close()
     connection.close()
 
 
@@ -73,6 +73,7 @@ def get_dashboard_stats():
     cursor = connection.cursor()
     cursor.execute("SELECT pnl FROM trades")
     trades = cursor.fetchall()
+    cursor.close()
     connection.close()
 
     if not trades:
@@ -104,6 +105,7 @@ def get_recent_trades():
         LIMIT 10
     """)
     trades = cursor.fetchall()
+    cursor.close()
     connection.close()
     return trades
 
@@ -134,7 +136,7 @@ def add_trade(
             notes, trade_date,
             before_image, after_image,
             trade_grade, source
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
     """, (
         symbol, side,
         entry_price, exit_price, quantity,
@@ -145,6 +147,7 @@ def add_trade(
         trade_grade, "manual",
     ))
     connection.commit()
+    cursor.close()
     connection.close()
 
 
@@ -163,6 +166,7 @@ def get_all_trades():
         ORDER BY id DESC
     """)
     trades = cursor.fetchall()
+    cursor.close()
     connection.close()
     return trades
 
@@ -170,8 +174,9 @@ def get_all_trades():
 def get_trade_by_id(trade_id):
     connection = get_connection()
     cursor = connection.cursor()
-    cursor.execute("SELECT * FROM trades WHERE id=?", (trade_id,))
+    cursor.execute("SELECT * FROM trades WHERE id=%s", (trade_id,))
     trade = cursor.fetchone()
+    cursor.close()
     connection.close()
     return trade
 
@@ -179,8 +184,9 @@ def get_trade_by_id(trade_id):
 def delete_trade(trade_id):
     connection = get_connection()
     cursor = connection.cursor()
-    cursor.execute("DELETE FROM trades WHERE id=?", (trade_id,))
+    cursor.execute("DELETE FROM trades WHERE id=%s", (trade_id,))
     connection.commit()
+    cursor.close()
     connection.close()
 
 
@@ -193,6 +199,7 @@ def get_analytics_data():
         "SELECT pnl, strategy, emotion, trade_date FROM trades ORDER BY id"
     )
     trades = cursor.fetchall()
+    cursor.close()
     connection.close()
 
     if not trades:
@@ -251,13 +258,14 @@ def log_sync(imported: int, skipped: int, errors: list):
     cursor = connection.cursor()
     cursor.execute("""
         INSERT INTO sync_log (synced_at, imported, skipped, errors)
-        VALUES (?, ?, ?, ?)
+        VALUES (%s, %s, %s, %s)
     """, (
         datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         imported, skipped,
         "; ".join(errors) if errors else "",
     ))
     connection.commit()
+    cursor.close()
     connection.close()
 
 
@@ -271,6 +279,7 @@ def get_last_sync():
         LIMIT 1
     """)
     row = cursor.fetchone()
+    cursor.close()
     connection.close()
 
     if not row:
